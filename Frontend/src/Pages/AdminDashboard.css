@@ -126,3 +126,7 @@
     background-color: #3498DB; /* Bright Blue */
   }
   
+  .time-filter {
+    display: flex;
+    gap: 12px; /* spacing between buttons */
+  }
