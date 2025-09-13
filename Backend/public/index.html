@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription Management API Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            border-left: 5px solid #667eea;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .response.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .quick-action {
+            background: white;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .quick-action:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .quick-action h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .quick-action p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-active { background: #28a745; }
+        .status-pending { background: #ffc107; }
+        .status-cancelled { background: #dc3545; }
+        .status-expired { background: #6c757d; }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Subscription Management API Tester</h1>
+            <p>Test all subscription operations with a user-friendly interface</p>
+        </div>
+
+        <div class="content">
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <div class="quick-action">
+                    <h3>📊 Get All Subscriptions</h3>
+                    <p>View all subscriptions in the database</p>
+                    <button class="btn" onclick="getAllSubscriptions()">Get All Subscriptions</button>
+                </div>
+                <div class="quick-action">
+                    <h3>ℹ️ Instructions</h3>
+                    <p>Enter User IDs and Plan IDs directly in the forms below</p>
+                    <button class="btn btn-secondary" onclick="showInstructions()">Show Instructions</button>
+                </div>
+            </div>
+
+            <!-- Create Subscription -->
+            <div class="section">
+                <h2>📝 Create Subscription</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="createUserId">User ID</label>
+                        <input type="text" id="createUserId" placeholder="Enter user ID">
+                    </div>
+                    <div class="form-group">
+                        <label for="createPlanId">Plan ID</label>
+                        <input type="text" id="createPlanId" placeholder="Enter plan ID">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="createStatus">Status</label>
+                        <select id="createStatus">
+                            <option value="active">Active</option>
+                            <option value="pending">Pending</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="createDuration">Duration (days)</label>
+                        <input type="number" id="createDuration" value="30" min="1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="createOriginalPrice">Original Price</label>
+                        <input type="number" id="createOriginalPrice" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="createDiscount">Discount Applied</label>
+                        <input type="number" id="createDiscount" step="0.01" value="0" placeholder="0.00">
+                    </div>
+                </div>
+                <button class="btn" onclick="createSubscription()">Create Subscription</button>
+                <div id="createResponse" class="response" style="display: none;"></div>
+            </div>
+
+            <!-- Get Subscription -->
+            <div class="section">
+                <h2>🔍 Get Subscription</h2>
+                <div class="form-group">
+                    <label for="getSubscriptionId">Subscription ID</label>
+                    <input type="text" id="getSubscriptionId" placeholder="Enter subscription ID">
+                </div>
+                <button class="btn" onclick="getSubscription()">Get Subscription</button>
+                <div id="getResponse" class="response" style="display: none;"></div>
+            </div>
+
+            <!-- Update Subscription -->
+            <div class="section">
+                <h2>✏️ Update Subscription</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="updateSubscriptionId">Subscription ID</label>
+                        <input type="text" id="updateSubscriptionId" placeholder="Enter subscription ID">
+                    </div>
+                    <div class="form-group">
+                        <label for="updateStatus">New Status</label>
+                        <select id="updateStatus">
+                            <option value="active">Active</option>
+                            <option value="pending">Pending</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn" onclick="updateSubscription()">Update Subscription</button>
+                <div id="updateResponse" class="response" style="display: none;"></div>
+            </div>
+
+            <!-- Upgrade Subscription -->
+            <div class="section">
+                <h2>⬆️ Upgrade Subscription</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="upgradeSubscriptionId">Subscription ID</label>
+                        <input type="text" id="upgradeSubscriptionId" placeholder="Enter subscription ID">
+                    </div>
+                    <div class="form-group">
+                        <label for="upgradePlanId">New Plan ID (Higher Tier)</label>
+                        <input type="text" id="upgradePlanId" placeholder="Enter new plan ID">
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="upgradeSubscription()">Upgrade Subscription</button>
+                <div id="upgradeResponse" class="response" style="display: none;"></div>
+            </div>
+
+            <!-- Downgrade Subscription -->
+            <div class="section">
+                <h2>⬇️ Downgrade Subscription</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="downgradeSubscriptionId">Subscription ID</label>
+                        <input type="text" id="downgradeSubscriptionId" placeholder="Enter subscription ID">
+                    </div>
+                    <div class="form-group">
+                        <label for="downgradePlanId">New Plan ID (Lower Tier)</label>
+                        <input type="text" id="downgradePlanId" placeholder="Enter new plan ID">
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="downgradeSubscription()">Downgrade Subscription</button>
+                <div id="downgradeResponse" class="response" style="display: none;"></div>
+            </div>
+
+            <!-- Cancel Subscription -->
+            <div class="section">
+                <h2>❌ Cancel Subscription</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cancelSubscriptionId">Subscription ID</label>
+                        <input type="text" id="cancelSubscriptionId" placeholder="Enter subscription ID">
+                    </div>
+                    <div class="form-group">
+                        <label for="cancelReason">Cancellation Reason</label>
+                        <input type="text" id="cancelReason" placeholder="Enter reason for cancellation">
+                    </div>
+                </div>
+                <button class="btn btn-danger" onclick="cancelSubscription()">Cancel Subscription</button>
+                <div id="cancelResponse" class="response" style="display: none;"></div>
+            </div>
+
+            <!-- Delete Subscription -->
+            <div class="section">
+                <h2>🗑️ Delete Subscription</h2>
+                <div class="form-group">
+                    <label for="deleteSubscriptionId">Subscription ID</label>
+                    <input type="text" id="deleteSubscriptionId" placeholder="Enter subscription ID">
+                </div>
+                <button class="btn btn-danger" onclick="deleteSubscription()">Delete Subscription</button>
+                <div id="deleteResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        // Utility function to make API calls
+        async function makeApiCall(endpoint, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                const result = await response.json();
+                
+                return {
+                    success: response.ok,
+                    data: result,
+                    status: response.status
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    data: { message: error.message },
+                    status: 0
+                };
+            }
+        }
+
+        // Utility function to display response
+        function displayResponse(elementId, response, isSuccess = null) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            
+            if (isSuccess === null) {
+                isSuccess = response.success;
+            }
+            
+            element.className = `response ${isSuccess ? 'success' : 'error'}`;
+            element.textContent = JSON.stringify(response.data, null, 2);
+        }
+
+        // Quick Actions
+        async function getAllSubscriptions() {
+            const response = await makeApiCall('/subscriptions/all');
+            displayResponse('createResponse', response);
+        }
+
+        function showInstructions() {
+            alert(`Instructions for using this API tester:
+
+1. Create User IDs and Plan IDs in your database first
+2. Enter the actual IDs in the form fields below
+3. Test each subscription operation
+4. View responses in the colored boxes below each form
+
+Example User ID: 507f1f77bcf86cd799439011
+Example Plan ID: 507f1f77bcf86cd799439012
+
+Make sure your MongoDB is running and you have created users and plans before testing subscriptions.`);
+        }
+
+        // Create Subscription
+        async function createSubscription() {
+            const userId = document.getElementById('createUserId').value;
+            const planId = document.getElementById('createPlanId').value;
+            const status = document.getElementById('createStatus').value;
+            const duration = parseInt(document.getElementById('createDuration').value);
+            const originalPrice = parseFloat(document.getElementById('createOriginalPrice').value);
+            const discount = parseFloat(document.getElementById('createDiscount').value);
+
+            if (!userId || !planId || !originalPrice) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const startDate = new Date();
+            const endDate = new Date(startDate.getTime() + duration * 24 * 60 * 60 * 1000);
+
+            const data = {
+                userId,
+                planId,
+                status,
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
+                pricing: {
+                    originalPrice,
+                    discountApplied: discount,
+                    finalPrice: originalPrice - discount
+                }
+            };
+
+            const response = await makeApiCall('/subscriptions/create', 'POST', data);
+            displayResponse('createResponse', response);
+        }
+
+        // Get Subscription
+        async function getSubscription() {
+            const subscriptionId = document.getElementById('getSubscriptionId').value;
+            if (!subscriptionId) {
+                alert('Please enter subscription ID');
+                return;
+            }
+
+            const response = await makeApiCall(`/subscriptions/${subscriptionId}`);
+            displayResponse('getResponse', response);
+        }
+
+        // Update Subscription
+        async function updateSubscription() {
+            const subscriptionId = document.getElementById('updateSubscriptionId').value;
+            const status = document.getElementById('updateStatus').value;
+
+            if (!subscriptionId) {
+                alert('Please enter subscription ID');
+                return;
+            }
+
+            const data = { status };
+            const response = await makeApiCall(`/subscriptions/update/${subscriptionId}`, 'POST', data);
+            displayResponse('updateResponse', response);
+        }
+
+        // Upgrade Subscription
+        async function upgradeSubscription() {
+            const subscriptionId = document.getElementById('upgradeSubscriptionId').value;
+            const newPlanId = document.getElementById('upgradePlanId').value;
+
+            if (!subscriptionId || !newPlanId) {
+                alert('Please enter both subscription ID and new plan ID');
+                return;
+            }
+
+            const data = { subscriptionId, newPlanId };
+            const response = await makeApiCall('/subscriptions/upgrade', 'POST', data);
+            displayResponse('upgradeResponse', response);
+        }
+
+        // Downgrade Subscription
+        async function downgradeSubscription() {
+            const subscriptionId = document.getElementById('downgradeSubscriptionId').value;
+            const newPlanId = document.getElementById('downgradePlanId').value;
+
+            if (!subscriptionId || !newPlanId) {
+                alert('Please enter both subscription ID and new plan ID');
+                return;
+            }
+
+            const data = { subscriptionId, newPlanId };
+            const response = await makeApiCall('/subscriptions/downgrade', 'POST', data);
+            displayResponse('downgradeResponse', response);
+        }
+
+        // Cancel Subscription
+        async function cancelSubscription() {
+            const subscriptionId = document.getElementById('cancelSubscriptionId').value;
+            const reason = document.getElementById('cancelReason').value;
+
+            if (!subscriptionId) {
+                alert('Please enter subscription ID');
+                return;
+            }
+
+            const data = { subscriptionId, reason };
+            const response = await makeApiCall('/subscriptions/cancel', 'POST', data);
+            displayResponse('cancelResponse', response);
+        }
+
+        // Delete Subscription
+        async function deleteSubscription() {
+            const subscriptionId = document.getElementById('deleteSubscriptionId').value;
+
+            if (!subscriptionId) {
+                alert('Please enter subscription ID');
+                return;
+            }
+
+            if (confirm('Are you sure you want to delete this subscription?')) {
+                const response = await makeApiCall(`/subscriptions/delete/${subscriptionId}`, 'POST');
+                displayResponse('deleteResponse', response);
+            }
+        }
+
+        // Page load - no auto-fill needed
+        window.onload = function() {
+            console.log('Subscription API Tester loaded. Enter your User IDs and Plan IDs manually.');
+        };
+    </script>
+</body>
+</html>

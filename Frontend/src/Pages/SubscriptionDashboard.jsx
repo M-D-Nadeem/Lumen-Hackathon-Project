@@ -81,6 +81,7 @@ const SubscriptionDashboard = () => {
         console.error('Error fetching data:', error);
         // Set demo data if API fails
         setUser({
+<<<<<<< HEAD
           _id: '68c51bb6fb2ab04ca431c1d1',
           userName: 'Demo User',
           email: 'demo@example.com',
@@ -113,6 +114,33 @@ const SubscriptionDashboard = () => {
             isActive: true
           }
         ]);
+=======
+          user_id: 1,
+          name: 'John Doe',
+          email: 'john.doe@example.com',
+          phone: '+1-234-567-8900',
+          status: 'active'
+        });
+        setSubscriptions([
+          {
+            subscription_id: 1,
+            user_id: 1,
+            product_id: 1,
+            subscription_type: 'monthly',
+            status: 'active',
+            start_date: '2024-01-01',
+            last_billed_date: '2024-01-01',
+            last_renewed_date: '2024-01-01',
+            grace_time: 7,
+            Product: { name: 'Basic Plan', price: '29.99' }
+          }
+        ]);
+        setProducts([
+          { product_id: 1, name: 'Basic Plan', price: '29.99', auto_renewal_allowed: 'Yes', status: 'Active' },
+          { product_id: 2, name: 'Premium Plan', price: '49.99', auto_renewal_allowed: 'Yes', status: 'Active' },
+          { product_id: 3, name: 'Enterprise Plan', price: '99.99', auto_renewal_allowed: 'Yes', status: 'Active' }
+        ]);
+>>>>>>> 8ab710908eeceb60aca5cac925f1a6fef25be7cd
       } finally {
         setLoading(false);
       }
@@ -125,8 +153,30 @@ const SubscriptionDashboard = () => {
   const pausedSubscriptions = subscriptions.filter(sub => sub.status === 'paused');
   const terminatedSubscriptions = subscriptions.filter(sub => sub.status === 'cancelled' || sub.status === 'expired');
 
+  const handleNewSubscription = async (productId, subscriptionType) => {
+    try {
+      const newSubscription = {
+        user_id: user.user_id,
+        product_id: productId,
+        subscription_type: subscriptionType,
+        status: 'active',
+        start_date: new Date().toISOString().split('T')[0],
+        grace_time: 7
+      };
+      
+      const createdSubscription = await api.createSubscription(newSubscription);
+      setSubscriptions(prev => [...prev, createdSubscription]);
+      setShowNewSubscriptionModal(false);
+      alert('New subscription created successfully!');
+    } catch (error) {
+      console.error('Error creating subscription:', error);
+      alert('Error creating subscription');
+    }
+  };
+
   const handleUpgradePlan = (subscription) => {
     setSelectedSubscription(subscription);
+<<<<<<< HEAD
   };
 
   const handleUpgradeToPlan = async (subscriptionId, newPlanId) => {
@@ -176,6 +226,40 @@ const SubscriptionDashboard = () => {
     } catch (error) {
       console.error('Error creating subscription:', error);
       alert('Error creating subscription: ' + error.message);
+=======
+    setShowUpgradeModal(true);
+  };
+
+  const handleUpgradeToPlan = async (newProductId) => {
+    try {
+      const updatedSubscription = {
+        product_id: newProductId,
+        last_renewed_date: new Date().toISOString().split('T')[0]
+      };
+      
+      await api.updateSubscription(selectedSubscription.subscription_id, updatedSubscription);
+      
+      // Update local state
+      setSubscriptions(prev => 
+        prev.map(sub => 
+          sub.subscription_id === selectedSubscription.subscription_id 
+            ? { 
+                ...sub, 
+                product_id: newProductId,
+                last_renewed_date: new Date().toISOString().split('T')[0],
+                Product: products.find(p => p.product_id === newProductId)
+              }
+            : sub
+        )
+      );
+      
+      setShowUpgradeModal(false);
+      setSelectedSubscription(null);
+      alert('Subscription upgraded successfully!');
+    } catch (error) {
+      console.error('Error upgrading subscription:', error);
+      alert('Error upgrading subscription');
+>>>>>>> 8ab710908eeceb60aca5cac925f1a6fef25be7cd
     }
   };
 
@@ -286,6 +370,7 @@ const SubscriptionDashboard = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
+<<<<<<< HEAD
           <div className="flex items-center space-x-2 mb-2">
             <h1 className="text-2xl font-bold text-text">Welcome, {user?.userName || 'User'}!</h1>
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -293,6 +378,26 @@ const SubscriptionDashboard = () => {
             }`}>
               {user?.status || 'inactive'}
             </span>
+=======
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <h1 className="text-2xl font-bold text-text">Welcome, {user?.name || 'User'}!</h1>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                user?.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              }`}>
+                {user?.status || 'inactive'}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowNewSubscriptionModal(true)}
+              className="bg-accent text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-200 flex items-center space-x-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span>New Subscription</span>
+            </button>
+>>>>>>> 8ab710908eeceb60aca5cac925f1a6fef25be7cd
           </div>
           <p className="text-gray-600">Manage your subscriptions and plans</p>
         </div>
@@ -381,14 +486,26 @@ const SubscriptionDashboard = () => {
                                   Change Plan
                                 </button>
                                 <button
+<<<<<<< HEAD
                                   onClick={() => handleWindUpPlan(subscription._id)}
                                   className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs rounded hover:bg-yellow-200 transition-colors"
+=======
+                                  onClick={() => handleWindUpPlan(subscription.subscription_id)}
+                                  className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded hover:bg-yellow-200 transition-colors"
+                                  title="Pause Subscription"
+>>>>>>> 8ab710908eeceb60aca5cac925f1a6fef25be7cd
                                 >
                                   Pause
                                 </button>
                                 <button
+<<<<<<< HEAD
                                   onClick={() => handleCancelPlan(subscription._id)}
                                   className="px-3 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition-colors"
+=======
+                                  onClick={() => handleCancelPlan(subscription.subscription_id)}
+                                  className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition-colors"
+                                  title="Cancel Subscription"
+>>>>>>> 8ab710908eeceb60aca5cac925f1a6fef25be7cd
                                 >
                                   Cancel
                                 </button>
@@ -396,8 +513,14 @@ const SubscriptionDashboard = () => {
                             )}
                             {subscription.status === 'paused' && (
                               <button
+<<<<<<< HEAD
                                 onClick={() => handleResumePlan(subscription._id)}
                                 className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded hover:bg-green-200 transition-colors"
+=======
+                                onClick={() => handleResumePlan(subscription.subscription_id)}
+                                className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded hover:bg-green-200 transition-colors"
+                                title="Resume Subscription"
+>>>>>>> 8ab710908eeceb60aca5cac925f1a6fef25be7cd
                               >
                                 Resume
                               </button>
@@ -611,8 +734,12 @@ const SubscriptionDashboard = () => {
                     <h4 className="font-medium text-text mb-3">Available Plans</h4>
                     <div className="space-y-3">
                       {products
+<<<<<<< HEAD
                         .filter(product => product._id !== selectedSubscription.planId?._id)
                         .slice(0, 5)
+=======
+                        .filter(product => product.product_id !== selectedSubscription.product_id)
+>>>>>>> 8ab710908eeceb60aca5cac925f1a6fef25be7cd
                         .map((product) => (
                           <div key={product._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                             <div className="flex justify-between items-start">
@@ -625,10 +752,17 @@ const SubscriptionDashboard = () => {
                               <div className="text-right">
                                 <p className="text-lg font-bold text-primary">${product.price}</p>
                                 <button 
+<<<<<<< HEAD
                                   onClick={() => handleUpgradeToPlan(selectedSubscription._id, product._id)}
                                   className="mt-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
                                 >
                                   Upgrade to This Plan
+=======
+                                  onClick={() => handleUpgradeToPlan(product.product_id)}
+                                  className="mt-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                                >
+                                  {parseFloat(product.price) > parseFloat(selectedSubscription.Product?.price || 0) ? 'Upgrade' : 'Downgrade'}
+>>>>>>> 8ab710908eeceb60aca5cac925f1a6fef25be7cd
                                 </button>
                               </div>
                             </div>
