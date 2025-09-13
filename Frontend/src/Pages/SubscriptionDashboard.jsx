@@ -58,6 +58,9 @@ const SubscriptionDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showOldPlans, setShowOldPlans] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState(null);
+  const [showNewSubscriptionModal, setShowNewSubscriptionModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -367,20 +370,21 @@ const SubscriptionDashboard = () => {
                         <td className="py-3 px-4 text-gray-600">{new Date(subscription.endDate).toLocaleDateString()}</td>
                         <td className="py-3 px-4 text-gray-600 capitalize">{subscription.planId?.billingCycle || 'monthly'}</td>
                         <td className="py-3 px-4">
-                          <div className="flex space-x-2">
+                          <div className="flex flex-wrap gap-1">
                             {subscription.status === 'active' && (
                               <>
                                 <button
                                   onClick={() => handleUpgradePlan(subscription)}
-                                  className="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded hover:bg-blue-200 transition-colors"
+                                  className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded hover:bg-blue-200 transition-colors"
+                                  title="Upgrade/Downgrade Plan"
                                 >
-                                  Upgrade
+                                  Change Plan
                                 </button>
                                 <button
                                   onClick={() => handleWindUpPlan(subscription._id)}
                                   className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs rounded hover:bg-yellow-200 transition-colors"
                                 >
-                                  Wind Up
+                                  Pause
                                 </button>
                                 <button
                                   onClick={() => handleCancelPlan(subscription._id)}
@@ -399,7 +403,7 @@ const SubscriptionDashboard = () => {
                               </button>
                             )}
                             {subscription.status === 'cancelled' && (
-                              <span className="px-3 py-1 bg-gray-100 text-gray-500 text-xs rounded">
+                              <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded">
                                 Cancelled
                               </span>
                             )}
@@ -507,15 +511,85 @@ const SubscriptionDashboard = () => {
           </div>
         </div>
 
-        {/* Upgrade Plan Modal */}
-        {selectedSubscription && (
+        {/* New Subscription Modal */}
+        {showNewSubscriptionModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-text">Upgrade Plan</h3>
+                  <h3 className="text-xl font-semibold text-text">Create New Subscription</h3>
                   <button
-                    onClick={() => setSelectedSubscription(null)}
+                    onClick={() => setShowNewSubscriptionModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-text mb-3">Available Plans</h4>
+                    <div className="space-y-3">
+                      {products.map((product) => (
+                        <div key={product.product_id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h5 className="font-medium text-text">{product.name}</h5>
+                              <p className="text-sm text-gray-600">
+                                Auto Renewal: {product.auto_renewal_allowed}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-primary">${product.price}</p>
+                              <div className="flex space-x-2 mt-2">
+                                <button
+                                  onClick={() => handleNewSubscription(product.product_id, 'monthly')}
+                                  className="px-3 py-1 bg-accent text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                                >
+                                  Monthly
+                                </button>
+                                <button
+                                  onClick={() => handleNewSubscription(product.product_id, 'yearly')}
+                                  className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                                >
+                                  Yearly
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    onClick={() => setShowNewSubscriptionModal(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Upgrade Plan Modal */}
+        {showUpgradeModal && selectedSubscription && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-text">Upgrade/Downgrade Plan</h3>
+                  <button
+                    onClick={() => {
+                      setShowUpgradeModal(false);
+                      setSelectedSubscription(null);
+                    }}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -534,7 +608,7 @@ const SubscriptionDashboard = () => {
                   </div>
 
                   <div>
-                    <h4 className="font-medium text-text mb-3">Available Upgrades</h4>
+                    <h4 className="font-medium text-text mb-3">Available Plans</h4>
                     <div className="space-y-3">
                       {products
                         .filter(product => product._id !== selectedSubscription.planId?._id)
@@ -566,7 +640,10 @@ const SubscriptionDashboard = () => {
 
                 <div className="flex justify-end space-x-3 mt-6">
                   <button
-                    onClick={() => setSelectedSubscription(null)}
+                    onClick={() => {
+                      setShowUpgradeModal(false);
+                      setSelectedSubscription(null);
+                    }}
                     className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
                   >
                     Cancel
