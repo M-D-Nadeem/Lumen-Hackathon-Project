@@ -56,6 +56,8 @@ const SubscriptionDashboard = () => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showOldPlans, setShowOldPlans] = useState(false);
+  const [selectedSubscription, setSelectedSubscription] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -84,6 +86,72 @@ const SubscriptionDashboard = () => {
 
   const activeSubscriptions = subscriptions.filter(sub => sub.status === 'active');
   const pausedSubscriptions = subscriptions.filter(sub => sub.status === 'PAUSED');
+  const terminatedSubscriptions = subscriptions.filter(sub => sub.terminated_date !== null);
+
+  const handleUpgradePlan = (subscription) => {
+    setSelectedSubscription(subscription);
+    // Show upgrade modal or redirect to upgrade page
+    alert(`Upgrade plan for ${subscription.Product?.name || 'Unknown Plan'}`);
+  };
+
+  const handleWindUpPlan = async (subscriptionId) => {
+    if (window.confirm('Are you sure you want to wind up this plan?')) {
+      try {
+        await api.pauseSubscription(subscriptionId);
+        setSubscriptions(prev => 
+          prev.map(sub => 
+            sub.subscription_id === subscriptionId 
+              ? { ...sub, status: 'PAUSED' }
+              : sub
+          )
+        );
+        alert('Plan has been wound up successfully');
+      } catch (error) {
+        console.error('Error winding up plan:', error);
+        alert('Error winding up plan');
+      }
+    }
+  };
+
+  const handleCancelPlan = async (subscriptionId) => {
+    if (window.confirm('Are you sure you want to cancel this plan? This action cannot be undone.')) {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        await api.updateSubscription(subscriptionId, { 
+          status: 'cancelled', 
+          terminated_date: today 
+        });
+        setSubscriptions(prev => 
+          prev.map(sub => 
+            sub.subscription_id === subscriptionId 
+              ? { ...sub, status: 'cancelled', terminated_date: today }
+              : sub
+          )
+        );
+        alert('Plan has been cancelled successfully');
+      } catch (error) {
+        console.error('Error cancelling plan:', error);
+        alert('Error cancelling plan');
+      }
+    }
+  };
+
+  const handleResumePlan = async (subscriptionId) => {
+    try {
+      await api.resumeSubscription(subscriptionId);
+      setSubscriptions(prev => 
+        prev.map(sub => 
+          sub.subscription_id === subscriptionId 
+            ? { ...sub, status: 'active' }
+            : sub
+        )
+      );
+      alert('Plan has been resumed successfully');
+    } catch (error) {
+      console.error('Error resuming plan:', error);
+      alert('Error resuming plan');
+    }
+  };
 
   const quickStats = [
     { 
@@ -94,15 +162,15 @@ const SubscriptionDashboard = () => {
     },
     { 
       label: 'Active Plans', 
-      value: subscriptions.filter(sub => sub.status === 'active').length.toString(), 
+      value: activeSubscriptions.length.toString(), 
       icon: CheckCircleIcon, 
       color: 'text-success' 
     },
     { 
-      label: 'Paused Plans', 
-      value: subscriptions.filter(sub => sub.status === 'PAUSED').length.toString(), 
+      label: 'Old Plans', 
+      value: terminatedSubscriptions.length.toString(), 
       icon: ChartBarIcon, 
-      color: 'text-warning' 
+      color: 'text-gray-600' 
     }
   ];
 
@@ -184,10 +252,13 @@ const SubscriptionDashboard = () => {
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Last Billed</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Last Renewed</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Grace Time</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {subscriptions.length > 0 ? subscriptions.map((subscription) => (
+                    {subscriptions.length > 0 ? subscriptions
+                      .filter(sub => showOldPlans ? true : sub.status !== 'cancelled')
+                      .map((subscription) => (
                       <tr key={subscription.subscription_id} className="hover:bg-gray-50">
                         <td className="py-3 px-4 font-medium text-text">#{subscription.subscription_id}</td>
                         <td className="py-3 px-4 capitalize text-gray-600">{subscription.subscription_type}</td>
@@ -214,10 +285,49 @@ const SubscriptionDashboard = () => {
                           {subscription.last_renewed_date ? new Date(subscription.last_renewed_date).toLocaleDateString() : '-'}
                         </td>
                         <td className="py-3 px-4 text-gray-600">{subscription.grace_time} days</td>
+                        <td className="py-3 px-4">
+                          <div className="flex space-x-2">
+                            {subscription.status === 'active' && (
+                              <>
+                                <button
+                                  onClick={() => handleUpgradePlan(subscription)}
+                                  className="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded hover:bg-blue-200 transition-colors"
+                                >
+                                  Upgrade
+                                </button>
+                                <button
+                                  onClick={() => handleWindUpPlan(subscription.subscription_id)}
+                                  className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs rounded hover:bg-yellow-200 transition-colors"
+                                >
+                                  Wind Up
+                                </button>
+                                <button
+                                  onClick={() => handleCancelPlan(subscription.subscription_id)}
+                                  className="px-3 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            )}
+                            {subscription.status === 'PAUSED' && (
+                              <button
+                                onClick={() => handleResumePlan(subscription.subscription_id)}
+                                className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded hover:bg-green-200 transition-colors"
+                              >
+                                Resume
+                              </button>
+                            )}
+                            {subscription.status === 'cancelled' && (
+                              <span className="px-3 py-1 bg-gray-100 text-gray-500 text-xs rounded">
+                                Cancelled
+                              </span>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     )) : (
                       <tr>
-                        <td colSpan="8" className="py-8 px-4 text-center text-gray-500">
+                        <td colSpan="9" className="py-8 px-4 text-center text-gray-500">
                           No subscriptions found.
                         </td>
                       </tr>
@@ -238,7 +348,7 @@ const SubscriptionDashboard = () => {
                 </div>
                 <h3 className="font-semibold text-text">User Info</h3>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 mb-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Name:</span>
                   <span className="font-medium">{user?.name || 'Unknown'}</span>
@@ -260,6 +370,18 @@ const SubscriptionDashboard = () => {
                   </span>
                 </div>
               </div>
+              
+              {/* See Old Plans Button */}
+              <button
+                onClick={() => setShowOldPlans(!showOldPlans)}
+                className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  showOldPlans 
+                    ? 'bg-accent text-white hover:bg-blue-600' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {showOldPlans ? 'Hide Old Plans' : 'See Old Plans'}
+              </button>
             </div>
 
             {/* Available Products */}
@@ -294,11 +416,77 @@ const SubscriptionDashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Upgrade Plan Modal */}
+        {selectedSubscription && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-text">Upgrade Plan</h3>
+                  <button
+                    onClick={() => setSelectedSubscription(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-text mb-2">Current Plan</h4>
+                    <p className="text-gray-600">{selectedSubscription.Product?.name || 'Unknown Plan'}</p>
+                    <p className="text-lg font-bold text-primary">
+                      ${selectedSubscription.Product?.price || '0.00'}/{selectedSubscription.subscription_type === 'yearly' ? 'year' : 'month'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium text-text mb-3">Available Upgrades</h4>
+                    <div className="space-y-3">
+                      {products
+                        .filter(product => product.product_id !== selectedSubscription.product_id)
+                        .slice(0, 5)
+                        .map((product) => (
+                          <div key={product.product_id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h5 className="font-medium text-text">{product.name}</h5>
+                                <p className="text-sm text-gray-600">
+                                  Auto Renewal: {product.auto_renewal_allowed}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-lg font-bold text-primary">${product.price}</p>
+                                <button className="mt-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-blue-600 transition-colors text-sm">
+                                  Upgrade to This Plan
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    onClick={() => setSelectedSubscription(null)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
 };
 
 export default SubscriptionDashboard;
-
 
