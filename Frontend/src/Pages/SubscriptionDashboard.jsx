@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navigation from '../Components/Navigation';
+import { api } from '../services/api';
 
 // Simple SVG Icons
 const BellIcon = ({ className }) => (
@@ -51,36 +52,82 @@ const CheckCircleIcon = ({ className }) => (
 );
 
 const SubscriptionDashboard = () => {
+  const [user, setUser] = useState(null);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // For demo purposes, using user ID 1
+        const userId = 1;
+        
+        const [userData, subscriptionsData, productsData] = await Promise.all([
+          api.getUser(userId),
+          api.getSubscriptionsByUser(userId),
+          api.getProducts()
+        ]);
+
+        setUser(userData);
+        setSubscriptions(subscriptionsData);
+        setProducts(productsData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const activeSubscriptions = subscriptions.filter(sub => sub.status === 'active');
+  const pausedSubscriptions = subscriptions.filter(sub => sub.status === 'PAUSED');
 
   const quickStats = [
-    { label: 'Active', value: '2', icon: CheckCircleIcon, color: 'text-success' },
-    { label: 'Spending', value: '$58', icon: CreditCardIcon, color: 'text-accent' },
-    { label: 'Savings', value: '$12', icon: ChartBarIcon, color: 'text-success' }
-  ];
-
-  const activeSubscriptions = [
-    {
-      name: 'Pro Plan',
-      price: '$29/month',
-      renews: 'Dec 15, 2025',
-      status: 'active',
-      features: ['Unlimited projects', 'Priority support', 'Advanced analytics']
+    { 
+      label: 'My Subscriptions', 
+      value: subscriptions.length.toString(), 
+      icon: CheckCircleIcon, 
+      color: 'text-primary' 
     },
-    {
-      name: 'Spotify Premium',
-      price: '$9.99/month',
-      renews: 'Jan 3, 2025',
-      status: 'active',
-      features: ['Ad-free music', 'Offline downloads', 'High quality audio']
+    { 
+      label: 'Active Plans', 
+      value: subscriptions.filter(sub => sub.status === 'active').length.toString(), 
+      icon: CheckCircleIcon, 
+      color: 'text-success' 
+    },
+    { 
+      label: 'Paused Plans', 
+      value: subscriptions.filter(sub => sub.status === 'PAUSED').length.toString(), 
+      icon: ChartBarIcon, 
+      color: 'text-warning' 
     }
   ];
 
-  const recommendedPlan = {
-    name: 'Business Plan',
+  const recommendedPlan = products.length > 0 ? {
+    name: products[0].name,
+    price: `$${products[0].price}/${products[0].name.toLowerCase().includes('yearly') ? 'year' : 'month'}`,
+    features: ['Premium features', 'Priority support', 'Advanced analytics', '24/7 support'],
+    savings: 'Best Value'
+  } : {
+    name: 'Premium Plan',
     price: '$49/month',
-    features: ['Everything in Pro', 'Team collaboration', 'Custom integrations', '24/7 support'],
-    savings: 'Save $20/month'
+    features: ['Premium features', 'Priority support', 'Advanced analytics', '24/7 support'],
+    savings: 'Best Value'
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,10 +138,14 @@ const SubscriptionDashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <div className="flex items-center space-x-2 mb-2">
-            <h1 className="text-2xl font-bold text-text">Welcome back, John!</h1>
-            <StarIcon className="w-5 h-5 text-yellow-500" />
+            <h1 className="text-2xl font-bold text-text">Welcome, {user?.name || 'User'}!</h1>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              user?.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}>
+              {user?.status || 'inactive'}
+            </span>
           </div>
-          <p className="text-gray-600">Here's an overview of your subscription management</p>
+          <p className="text-gray-600">Manage your subscriptions and plans</p>
         </div>
 
         {/* Quick Stats */}
@@ -118,77 +169,127 @@ const SubscriptionDashboard = () => {
           {/* Active Subscriptions */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
-              <h2 className="text-lg font-semibold text-text mb-6">Active Subscriptions</h2>
-              <div className="space-y-4">
-                {activeSubscriptions.map((subscription, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold text-text">{subscription.name}</h3>
-                        <p className="text-sm text-gray-600">Renews: {subscription.renews}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-primary">{subscription.price}</p>
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-success">
-                          Active
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {subscription.features.map((feature, featureIndex) => (
-                        <span key={featureIndex} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                          {feature}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              <h2 className="text-lg font-semibold text-text mb-6">My Subscriptions</h2>
+              
+              {/* Subscription Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Subscription ID</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Type</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Product</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Start Date</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Last Billed</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Last Renewed</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Grace Time</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {subscriptions.length > 0 ? subscriptions.map((subscription) => (
+                      <tr key={subscription.subscription_id} className="hover:bg-gray-50">
+                        <td className="py-3 px-4 font-medium text-text">#{subscription.subscription_id}</td>
+                        <td className="py-3 px-4 capitalize text-gray-600">{subscription.subscription_type}</td>
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="font-medium text-text">{subscription.Product?.name || 'Unknown'}</p>
+                            <p className="text-sm text-gray-500">${subscription.Product?.price || '0.00'}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            subscription.status === 'active' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {subscription.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-gray-600">{new Date(subscription.start_date).toLocaleDateString()}</td>
+                        <td className="py-3 px-4 text-gray-600">
+                          {subscription.last_billed_date ? new Date(subscription.last_billed_date).toLocaleDateString() : '-'}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600">
+                          {subscription.last_renewed_date ? new Date(subscription.last_renewed_date).toLocaleDateString() : '-'}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600">{subscription.grace_time} days</td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan="8" className="py-8 px-4 text-center text-gray-500">
+                          No subscriptions found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
 
           {/* Right Sidebar */}
           <div className="space-y-6">
-            {/* Help Section */}
+            {/* User Information */}
             <div className="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
               <div className="flex items-center space-x-3 mb-4">
-                <div className="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center">
-                  <QuestionMarkCircleIcon className="w-5 h-5 text-pink-600" />
+                <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
+                  <UserIcon className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="font-semibold text-text">Need Help?</h3>
+                <h3 className="font-semibold text-text">User Info</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-4">Get support or learn more about managing your subscriptions.</p>
-              <button className="w-full bg-accent text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-all duration-200 font-medium">
-                Contact Support
-              </button>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Name:</span>
+                  <span className="font-medium">{user?.name || 'Unknown'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Email:</span>
+                  <span className="font-medium text-sm">{user?.email || 'Unknown'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Phone:</span>
+                  <span className="font-medium">{user?.phone || 'Unknown'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Status:</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    user?.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {user?.status || 'inactive'}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Recommended Plan */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-soft border border-blue-200 p-6">
+            {/* Available Products */}
+            <div className="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
               <div className="flex items-center space-x-3 mb-4">
-                <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">R</span>
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <ChartBarIcon className="w-5 h-5 text-green-600" />
                 </div>
-                <h3 className="font-semibold text-text">RECOMMENDED</h3>
+                <h3 className="font-semibold text-text">Available Plans</h3>
               </div>
-              
-              <div className="bg-white rounded-lg p-4 border-2 border-dashed border-accent">
-                <h4 className="font-bold text-lg text-text mb-2">{recommendedPlan.name}</h4>
-                <p className="text-2xl font-bold text-primary mb-3">{recommendedPlan.price}</p>
-                <p className="text-sm text-success font-medium mb-4">{recommendedPlan.savings}</p>
-                
-                <ul className="space-y-2 mb-4">
-                  {recommendedPlan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center text-sm text-gray-700">
-                      <CheckCircleIcon className="w-4 h-4 text-success mr-2 flex-shrink-0" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                
-                <button className="w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-blue-800 transition-all duration-200 font-medium">
-                  Upgrade Now
-                </button>
+              <div className="space-y-3">
+                {products.slice(0, 5).map((product) => (
+                  <div key={product.product_id} className="border border-gray-200 rounded-lg p-3">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-medium text-text">{product.name}</h4>
+                      <span className="text-lg font-bold text-primary">${product.price}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>Auto Renewal: {product.auto_renewal_allowed}</span>
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        product.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {product.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {products.length > 5 && (
+                  <p className="text-sm text-gray-500 text-center">+{products.length - 5} more plans</p>
+                )}
               </div>
             </div>
           </div>
@@ -199,3 +300,5 @@ const SubscriptionDashboard = () => {
 };
 
 export default SubscriptionDashboard;
+
+
