@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom"; // ✅ import Link
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -10,17 +10,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import "./AdminDashboard.css";
-//
 
-<nav className="dashboard-nav">
-  <Link to="/admin" className="nav-btn">Dashboard</Link>
-  <Link to="/plans" className="nav-btn">Plans</Link>
-  <Link to="/users" className="nav-btn">Users</Link>
-  <Link to="/subscriptions" className="nav-btn">Subscriptions</Link>
-  <Link to="/analytics" className="nav-btn">Analytics</Link>
-</nav>
-//
-const data = [
+// Revenue data
+const revenueData = [
   { day: "Day 1", revenue: 1200 },
   { day: "Day 5", revenue: 2300 },
   { day: "Day 10", revenue: 1800 },
@@ -30,7 +22,28 @@ const data = [
   { day: "Day 30", revenue: 5000 },
 ];
 
+// Mock Top Plans Data
+const plansData = {
+  recent: [
+    { name: "Pro", sales: 120 },
+    { name: "Business", sales: 90 },
+    { name: "Basic", sales: 70 },
+  ],
+  month: [
+    { name: "Pro", sales: 420 },
+    { name: "Enterprise", sales: 300 },
+    { name: "Business", sales: 250 },
+  ],
+  year: [
+    { name: "Enterprise", sales: 3200 },
+    { name: "Pro", sales: 2800 },
+    { name: "Business", sales: 2100 },
+  ],
+};
+
 const AdminDashboard = () => {
+  const [timeRange, setTimeRange] = useState("recent");
+
   return (
     <div className="dashboard">
       {/* Header */}
@@ -44,11 +57,11 @@ const AdminDashboard = () => {
 
       {/* Navigation */}
       <nav className="dashboard-nav">
-        <Link to="/admin">Dashboard</Link>
-        <Link to="/plans">Plans</Link>
-        <Link to="/users">Users</Link>
-        <Link to="/subscriptions">Subscriptions</Link>
-        <Link to="/analytics">Analytics</Link>
+        <Link to="/admin" className="nav-btn">Dashboard</Link>
+        <Link to="/plans" className="nav-btn">Plans</Link>
+        <Link to="/users" className="nav-btn">Users</Link>
+        <Link to="/subscriptions" className="nav-btn">Subscriptions</Link>
+        <Link to="/analytics" className="nav-btn">Analytics</Link>
       </nav>
 
       {/* Metrics */}
@@ -79,7 +92,7 @@ const AdminDashboard = () => {
       <section className="analytics">
         <h3>📈 Real-Time Analytics</h3>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data}>
+          <LineChart data={revenueData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="day" />
             <YAxis />
@@ -94,51 +107,42 @@ const AdminDashboard = () => {
         </ResponsiveContainer>
       </section>
 
-      <section className="bottom-section">
-        {/* Recent Activities */}
-        <div className="recent-activities">
-          <h3>🔥 Recent Activities</h3>
-          <ul>
-            <li>• 15 new subs</li>
-            <li>• 3 upgrades</li>
-            <li>• 2 downgrades</li>
-            <li>• 1 cancel</li>
-          </ul>
-          <button>View All</button>
+      {/* Top Plans Section */}
+      <section className="analytics">
+        <div className="flex justify-between items-center mb-4">
+          <h3>🏆 Top Plans</h3>
+          <div className="time-filter">
+            <button
+              className="nav-btn"
+              onClick={() => setTimeRange("recent")}
+            >
+              Recent
+            </button>
+            <button
+              className="nav-btn"
+              onClick={() => setTimeRange("month")}
+            >
+              Month
+            </button>
+            <button
+              className="nav-btn"
+              onClick={() => setTimeRange("year")}
+            >
+              Year
+            </button>
+          </div>
         </div>
 
-        {/* Alerts */}
-        <div className="alerts">
-          <h3>⚠️ Alerts & Notifications</h3>
-          <ul>
-            <li>• High churn rate in Starter plan</li>
-            <li>• Payment failures increased 15%</li>
-            <li>• Server response time &gt; 2s</li>
-          </ul>
-          <button>View All Alerts</button>
-        </div>
-      </section>
-
-      <section className="bottom-section">
-        {/* Top Plans */}
-        <div className="top-plans">
-          <h3>🏆 Top Performing Plans</h3>
-          <ol>
-            <li>1. Pro ($29)</li>
-            <li>2. Business</li>
-            <li>3. Basic ($9)</li>
-          </ol>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="quick-actions">
-          <h3>📋 Quick Actions</h3>
-          <button>+ Add New Plan</button>
-          <button>📤 Export Data</button>
-          <button>📧 Send Newsletter</button>
-          <button>🎁 Create Discount</button>
-          <button>👥 Manage Users</button>
-        </div>
+        <ul>
+          {plansData[timeRange].map((plan, index) => (
+            <li key={index}>
+              {index + 1}. {plan.name} ({plan.sales} subs)
+            </li>
+          ))}
+        </ul>
+        <Link to="/plans">
+          <button className="nav-btn mt-2">View All Plans</button>
+        </Link>
       </section>
     </div>
   );
