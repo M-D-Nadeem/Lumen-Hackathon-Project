@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -43,6 +43,16 @@ const plansData = {
 
 const AdminDashboard = () => {
   const [timeRange, setTimeRange] = useState("recent");
+  const navigate = useNavigate();
+
+  // ✅ Logout handler
+  const handleLogout = () => {
+    // Clear any stored tokens/session (if used)
+    localStorage.removeItem("authToken");
+
+    // Redirect to home/login
+    navigate("/");
+  };
 
   return (
     <div className="dashboard">
@@ -52,6 +62,9 @@ const AdminDashboard = () => {
         <div className="header-actions">
           <span>🔔</span>
           <span>Admin ⬇️</span>
+          <button className="logout-btn" onClick={handleLogout}>
+            🚪 Logout
+          </button>
         </div>
       </header>
 
