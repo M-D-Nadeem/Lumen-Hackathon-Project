@@ -1,0 +1,44 @@
+/* Import base modal styles */
+.edit-modal {
+  max-width: 700px;
+}
+
+.plan-stats-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.plan-stats-info .stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.plan-stats-info .stat-item label {
+  font-weight: 500;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.plan-stats-info .stat-item span {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.save-btn {
+  background: #059669;
+  color: white;
+}
+
+.save-btn:hover {
+  background: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+}
+

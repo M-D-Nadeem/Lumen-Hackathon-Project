@@ -1,0 +1,155 @@
+.plan-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.plan-header {
+  margin-bottom: 16px;
+}
+
+.plan-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.plan-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.plan-pricing {
+  margin-bottom: 16px;
+}
+
+.plan-price {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.plan-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-value {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.stat-revenue {
+  font-size: 16px;
+  font-weight: 600;
+  color: #059669;
+}
+
+.plan-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 0;
+}
+
+.edit-btn {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.stats-btn {
+  background-color: #8b5cf6;
+  color: white;
+}
+
+.stats-btn:hover {
+  background-color: #7c3aed;
+  transform: translateY(-1px);
+}
+
+.disable-btn {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.disable-btn:hover {
+  background-color: #d97706;
+  transform: translateY(-1px);
+}
+
+.delete-btn {
+  background-color: #ef4444;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #dc2626;
+  transform: translateY(-1px);
+}
+
+/* Status indicator */
+.plan-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+}
+
+.plan-card[data-status="inactive"]::before {
+  background: linear-gradient(90deg, #ef4444, #f59e0b);
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .plan-actions {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    flex: none;
+  }
+  
+  .plan-card {
+    padding: 16px;
+  }
+}
