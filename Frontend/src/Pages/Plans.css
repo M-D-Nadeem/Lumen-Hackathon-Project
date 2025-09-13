@@ -1,0 +1,79 @@
+.plans-container {
+    padding: 40px;
+    background-color: #F8F9FA; /* Off-White Background */
+    min-height: 100vh;
+  }
+  
+  .plans-title {
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    color: #0A3D62; /* Deep Blue */
+    margin-bottom: 30px;
+  }
+  
+  .plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    justify-items: center;
+  }
+  
+  .plan-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 16px;
+    padding: 25px;
+    text-align: center;
+    width: 100%;
+    max-width: 320px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .plan-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  }
+  
+  .plan-name {
+    font-size: 22px;
+    font-weight: 600;
+    color: #3498DB; /* Bright Blue */
+    margin-bottom: 10px;
+  }
+  
+  .plan-price {
+    font-size: 20px;
+    font-weight: bold;
+    color: #28A745; /* Muted Green */
+    margin-bottom: 10px;
+  }
+  
+  .plan-desc {
+    font-size: 14px;
+    color: #343A40; /* Dark Gray */
+    margin-bottom: 20px;
+  }
+  
+  .plan-btn {
+    background-color: #0A3D62; /* Deep Blue */
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease;
+  }
+  
+  .plan-btn:hover {
+    background-color: #3498DB; /* Bright Blue */
+  }
+  
+  /* Highlighted Pro Plan */
+  .highlight {
+    border: 2px solid #3498DB; /* Bright Blue Border */
+    background-color: #ECF6FD; /* Light Blue Shade */
+  }
+  
