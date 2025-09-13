@@ -76,7 +76,8 @@ export default function EditPlanModal({ plan, isOpen, onClose, onUpdatePlan }) {
       description: formData.description,
       color: formData.color,
       features: formData.features.split(',').map(f => f.trim()).filter(f => f),
-      status: formData.status
+      status: formData.status,
+      lastUpdated: new Date().toISOString()
     };
 
     onUpdatePlan(updatedPlan);

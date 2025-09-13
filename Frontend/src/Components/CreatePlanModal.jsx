@@ -64,7 +64,9 @@ export default function CreatePlanModal({ isOpen, onClose, onCreatePlan }) {
       features: formData.features.split(',').map(f => f.trim()).filter(f => f),
       status: formData.status,
       users: 0,
-      revenue: 0
+      revenue: 0,
+      createdAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString()
     };
 
     onCreatePlan(newPlan);

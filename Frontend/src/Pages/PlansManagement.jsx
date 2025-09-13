@@ -3,6 +3,7 @@ import PlanCard from '../Components/PlanCard';
 import CreatePlanModal from '../Components/CreatePlanModal';
 import EditPlanModal from '../Components/EditPlanModal';
 import PlanStatsModal from '../Components/PlanStatsModal';
+import TopPlansSection from '../Components/TopPlansSection';
 import './PlansManagement.css';
 
 const PlansManagement = () => {
@@ -53,12 +54,51 @@ const PlansManagement = () => {
     return plans.reduce((total, plan) => total + (plan.revenue || 0), 0);
   };
 
+  // Time-based analytics functions
+  const getTopPlansByTimeframe = (timeframe) => {
+    const now = new Date();
+    let startDate;
+    
+    switch (timeframe) {
+      case 'recent':
+        startDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)); // Last 30 days
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1); // Current month
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1); // Current year
+        break;
+      default:
+        startDate = new Date(0);
+    }
+
+    return plans
+      .filter(plan => {
+        const planDate = new Date(plan.createdAt || plan.lastUpdated || Date.now());
+        return planDate >= startDate;
+      })
+      .sort((a, b) => {
+        // Sort by revenue first, then by users
+        if (b.revenue !== a.revenue) {
+          return (b.revenue || 0) - (a.revenue || 0);
+        }
+        return (b.users || 0) - (a.users || 0);
+      })
+      .slice(0, 5); // Top 5 plans
+  };
+
+  const getTopPlansRecent = () => getTopPlansByTimeframe('recent');
+  const getTopPlansMonth = () => getTopPlansByTimeframe('month');
+  const getTopPlansYear = () => getTopPlansByTimeframe('year');
+
 
   const clearAllData = () => {
     if (window.confirm('Are you sure you want to clear all plans? This action cannot be undone.')) {
       setPlans([]);
     }
   };
+
 
   // Plan management functions
   const handleCreatePlan = (newPlan) => {
@@ -198,6 +238,14 @@ const PlansManagement = () => {
           )}
         </div>
       </div>
+
+      {/* Top Plans Analytics Section */}
+      <TopPlansSection
+        plans={plans}
+        getTopPlansRecent={getTopPlansRecent}
+        getTopPlansMonth={getTopPlansMonth}
+        getTopPlansYear={getTopPlansYear}
+      />
 
       <div className="performance-summary">
         <h3 className="summary-title">📊 PLAN PERFORMANCE SUMMARY</h3>
