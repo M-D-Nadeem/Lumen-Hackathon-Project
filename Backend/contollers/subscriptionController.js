@@ -1,5 +1,6 @@
 import Subscription from "../models/subscriptionSchema.js";
 import Plan from "../models/planSchema.js";
+import User from "../models/userSchema.js";
 
 export const createSubscription = async (req, res) => {
   try {
@@ -19,8 +20,21 @@ export const createSubscription = async (req, res) => {
 export const getAllSubscriptions = async (req, res) => {
   try {
     const subscriptions = await Subscription.find()
-      .populate("userId", "username email")
+      .populate("userId", "userName email")
       .populate("planId", "name price")
+      .populate("discountCode", "code percentage");
+
+    res.json({ success: true, data: subscriptions });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getSubscriptionsByUser = async (req, res) => {
+  try {
+    const subscriptions = await Subscription.find({ userId: req.params.userId })
+      .populate("userId", "userName email")
+      .populate("planId", "name price category billingCycle")
       .populate("discountCode", "code percentage");
 
     res.json({ success: true, data: subscriptions });
@@ -33,7 +47,7 @@ export const getAllSubscriptions = async (req, res) => {
 export const getSubscriptionById = async (req, res) => {
   try {
     const subscription = await Subscription.findById(req.params.id)
-      .populate("userId", "username email")
+      .populate("userId", "userName email")
       .populate("planId", "name price")
       .populate("discountCode", "code percentage");
 

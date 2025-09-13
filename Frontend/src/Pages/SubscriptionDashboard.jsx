@@ -62,20 +62,54 @@ const SubscriptionDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // For demo purposes, using user ID 1
-        const userId = 1;
+        // Using static user ID
+        const userId = '68c51bb6fb2ab04ca431c1d1';
         
-        const [userData, subscriptionsData, productsData] = await Promise.all([
+        const [userResponse, subscriptionsResponse, productsResponse] = await Promise.all([
           api.getUser(userId),
           api.getSubscriptionsByUser(userId),
           api.getProducts()
         ]);
 
-        setUser(userData);
-        setSubscriptions(subscriptionsData);
-        setProducts(productsData);
+        setUser(userResponse.data);
+        setSubscriptions(subscriptionsResponse.data);
+        setProducts(productsResponse.data);
       } catch (error) {
         console.error('Error fetching data:', error);
+        // Set demo data if API fails
+        setUser({
+          _id: '68c51bb6fb2ab04ca431c1d1',
+          userName: 'Demo User',
+          email: 'demo@example.com',
+          status: 'active'
+        });
+        setSubscriptions([]);
+        setProducts([
+          {
+            _id: '1',
+            name: 'Basic Plan',
+            price: 29.99,
+            billingCycle: 'monthly',
+            category: 'basic',
+            isActive: true
+          },
+          {
+            _id: '2',
+            name: 'Gold Plan',
+            price: 59.99,
+            billingCycle: 'monthly',
+            category: 'gold',
+            isActive: true
+          },
+          {
+            _id: '3',
+            name: 'Premium Plan',
+            price: 99.99,
+            billingCycle: 'monthly',
+            category: 'premium',
+            isActive: true
+          }
+        ]);
       } finally {
         setLoading(false);
       }
@@ -85,13 +119,61 @@ const SubscriptionDashboard = () => {
   }, []);
 
   const activeSubscriptions = subscriptions.filter(sub => sub.status === 'active');
-  const pausedSubscriptions = subscriptions.filter(sub => sub.status === 'PAUSED');
-  const terminatedSubscriptions = subscriptions.filter(sub => sub.terminated_date !== null);
+  const pausedSubscriptions = subscriptions.filter(sub => sub.status === 'paused');
+  const terminatedSubscriptions = subscriptions.filter(sub => sub.status === 'cancelled' || sub.status === 'expired');
 
   const handleUpgradePlan = (subscription) => {
     setSelectedSubscription(subscription);
-    // Show upgrade modal or redirect to upgrade page
-    alert(`Upgrade plan for ${subscription.Product?.name || 'Unknown Plan'}`);
+  };
+
+  const handleUpgradeToPlan = async (subscriptionId, newPlanId) => {
+    try {
+      await api.upgradeSubscription(subscriptionId, newPlanId);
+      // Refresh subscriptions data
+      const userId = '68c51bb6fb2ab04ca431c1d1';
+      const subscriptionsResponse = await api.getSubscriptionsByUser(userId);
+      setSubscriptions(subscriptionsResponse.data);
+      setSelectedSubscription(null);
+      alert('Plan upgraded successfully!');
+    } catch (error) {
+      console.error('Error upgrading plan:', error);
+      alert('Error upgrading plan: ' + error.message);
+    }
+  };
+
+  const handleCreateSubscription = async (planId) => {
+    try {
+      const userId = '68c51bb6fb2ab04ca431c1d1';
+      const plan = products.find(p => p._id === planId);
+      
+      if (!plan) {
+        alert('Plan not found');
+        return;
+      }
+
+      const subscriptionData = {
+        userId: userId,
+        planId: planId,
+        status: 'active',
+        startDate: new Date(),
+        endDate: new Date(Date.now() + (plan.billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000),
+        pricing: {
+          originalPrice: plan.price,
+          discountApplied: 0,
+          finalPrice: plan.price
+        }
+      };
+
+      await api.createSubscription(subscriptionData);
+      
+      // Refresh subscriptions data
+      const subscriptionsResponse = await api.getSubscriptionsByUser(userId);
+      setSubscriptions(subscriptionsResponse.data);
+      alert('Subscription created successfully!');
+    } catch (error) {
+      console.error('Error creating subscription:', error);
+      alert('Error creating subscription: ' + error.message);
+    }
   };
 
   const handleWindUpPlan = async (subscriptionId) => {
@@ -100,8 +182,8 @@ const SubscriptionDashboard = () => {
         await api.pauseSubscription(subscriptionId);
         setSubscriptions(prev => 
           prev.map(sub => 
-            sub.subscription_id === subscriptionId 
-              ? { ...sub, status: 'PAUSED' }
+            sub._id === subscriptionId 
+              ? { ...sub, status: 'paused' }
               : sub
           )
         );
@@ -116,15 +198,11 @@ const SubscriptionDashboard = () => {
   const handleCancelPlan = async (subscriptionId) => {
     if (window.confirm('Are you sure you want to cancel this plan? This action cannot be undone.')) {
       try {
-        const today = new Date().toISOString().split('T')[0];
-        await api.updateSubscription(subscriptionId, { 
-          status: 'cancelled', 
-          terminated_date: today 
-        });
+        await api.cancelSubscription(subscriptionId, 'User requested cancellation');
         setSubscriptions(prev => 
           prev.map(sub => 
-            sub.subscription_id === subscriptionId 
-              ? { ...sub, status: 'cancelled', terminated_date: today }
+            sub._id === subscriptionId 
+              ? { ...sub, status: 'cancelled', endDate: new Date() }
               : sub
           )
         );
@@ -141,7 +219,7 @@ const SubscriptionDashboard = () => {
       await api.resumeSubscription(subscriptionId);
       setSubscriptions(prev => 
         prev.map(sub => 
-          sub.subscription_id === subscriptionId 
+          sub._id === subscriptionId 
             ? { ...sub, status: 'active' }
             : sub
         )
@@ -206,7 +284,7 @@ const SubscriptionDashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <div className="flex items-center space-x-2 mb-2">
-            <h1 className="text-2xl font-bold text-text">Welcome, {user?.name || 'User'}!</h1>
+            <h1 className="text-2xl font-bold text-text">Welcome, {user?.userName || 'User'}!</h1>
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
               user?.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
             }`}>
@@ -245,13 +323,12 @@ const SubscriptionDashboard = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Subscription ID</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Type</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Product</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Plan</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Price</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Start Date</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Last Billed</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Last Renewed</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Grace Time</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">End Date</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Billing Cycle</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
                     </tr>
                   </thead>
@@ -259,32 +336,36 @@ const SubscriptionDashboard = () => {
                     {subscriptions.length > 0 ? subscriptions
                       .filter(sub => showOldPlans ? true : sub.status !== 'cancelled')
                       .map((subscription) => (
-                      <tr key={subscription.subscription_id} className="hover:bg-gray-50">
-                        <td className="py-3 px-4 font-medium text-text">#{subscription.subscription_id}</td>
-                        <td className="py-3 px-4 capitalize text-gray-600">{subscription.subscription_type}</td>
+                      <tr key={subscription._id} className="hover:bg-gray-50">
+                        <td className="py-3 px-4 font-medium text-text">#{subscription._id.slice(-8)}</td>
                         <td className="py-3 px-4">
                           <div>
-                            <p className="font-medium text-text">{subscription.Product?.name || 'Unknown'}</p>
-                            <p className="text-sm text-gray-500">${subscription.Product?.price || '0.00'}</p>
+                            <p className="font-medium text-text">{subscription.planId?.name || 'Unknown Plan'}</p>
+                            <p className="text-sm text-gray-500 capitalize">{subscription.planId?.category || 'basic'}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="font-medium text-text">${subscription.pricing?.finalPrice || subscription.planId?.price || '0.00'}</p>
+                            {subscription.pricing?.discountApplied > 0 && (
+                              <p className="text-sm text-green-600">-${subscription.pricing.discountApplied} discount</p>
+                            )}
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             subscription.status === 'active' 
                               ? 'bg-green-100 text-green-800' 
-                              : 'bg-yellow-100 text-yellow-800'
+                              : subscription.status === 'paused'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
                           }`}>
                             {subscription.status}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-gray-600">{new Date(subscription.start_date).toLocaleDateString()}</td>
-                        <td className="py-3 px-4 text-gray-600">
-                          {subscription.last_billed_date ? new Date(subscription.last_billed_date).toLocaleDateString() : '-'}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">
-                          {subscription.last_renewed_date ? new Date(subscription.last_renewed_date).toLocaleDateString() : '-'}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">{subscription.grace_time} days</td>
+                        <td className="py-3 px-4 text-gray-600">{new Date(subscription.startDate).toLocaleDateString()}</td>
+                        <td className="py-3 px-4 text-gray-600">{new Date(subscription.endDate).toLocaleDateString()}</td>
+                        <td className="py-3 px-4 text-gray-600 capitalize">{subscription.planId?.billingCycle || 'monthly'}</td>
                         <td className="py-3 px-4">
                           <div className="flex space-x-2">
                             {subscription.status === 'active' && (
@@ -296,22 +377,22 @@ const SubscriptionDashboard = () => {
                                   Upgrade
                                 </button>
                                 <button
-                                  onClick={() => handleWindUpPlan(subscription.subscription_id)}
+                                  onClick={() => handleWindUpPlan(subscription._id)}
                                   className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs rounded hover:bg-yellow-200 transition-colors"
                                 >
                                   Wind Up
                                 </button>
                                 <button
-                                  onClick={() => handleCancelPlan(subscription.subscription_id)}
+                                  onClick={() => handleCancelPlan(subscription._id)}
                                   className="px-3 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition-colors"
                                 >
                                   Cancel
                                 </button>
                               </>
                             )}
-                            {subscription.status === 'PAUSED' && (
+                            {subscription.status === 'paused' && (
                               <button
-                                onClick={() => handleResumePlan(subscription.subscription_id)}
+                                onClick={() => handleResumePlan(subscription._id)}
                                 className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded hover:bg-green-200 transition-colors"
                               >
                                 Resume
@@ -327,7 +408,7 @@ const SubscriptionDashboard = () => {
                       </tr>
                     )) : (
                       <tr>
-                        <td colSpan="9" className="py-8 px-4 text-center text-gray-500">
+                        <td colSpan="8" className="py-8 px-4 text-center text-gray-500">
                           No subscriptions found.
                         </td>
                       </tr>
@@ -351,15 +432,15 @@ const SubscriptionDashboard = () => {
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Name:</span>
-                  <span className="font-medium">{user?.name || 'Unknown'}</span>
+                  <span className="font-medium">{user?.userName || 'Unknown'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Email:</span>
                   <span className="font-medium text-sm">{user?.email || 'Unknown'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Phone:</span>
-                  <span className="font-medium">{user?.phone || 'Unknown'}</span>
+                  <span className="text-gray-600">User ID:</span>
+                  <span className="font-medium text-xs">{user?._id ? user._id.slice(-8) : 'Unknown'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span>
@@ -394,18 +475,27 @@ const SubscriptionDashboard = () => {
               </div>
               <div className="space-y-3">
                 {products.slice(0, 5).map((product) => (
-                  <div key={product.product_id} className="border border-gray-200 rounded-lg p-3">
+                  <div key={product._id} className="border border-gray-200 rounded-lg p-3">
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-medium text-text">{product.name}</h4>
                       <span className="text-lg font-bold text-primary">${product.price}</span>
                     </div>
                     <div className="flex justify-between text-sm text-gray-600">
-                      <span>Auto Renewal: {product.auto_renewal_allowed}</span>
+                      <span>Billing: {product.billingCycle}</span>
                       <span className={`px-2 py-1 rounded text-xs ${
-                        product.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        product.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
-                        {product.status}
+                        {product.isActive ? 'Active' : 'Inactive'}
                       </span>
+                    </div>
+                    <div className="mt-2 flex justify-between items-center">
+                      <span className="text-xs text-gray-500 capitalize">Category: {product.category}</span>
+                      <button
+                        onClick={() => handleCreateSubscription(product._id)}
+                        className="px-3 py-1 bg-accent text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                      >
+                        Subscribe
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -437,9 +527,9 @@ const SubscriptionDashboard = () => {
                 <div className="space-y-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h4 className="font-medium text-text mb-2">Current Plan</h4>
-                    <p className="text-gray-600">{selectedSubscription.Product?.name || 'Unknown Plan'}</p>
+                    <p className="text-gray-600">{selectedSubscription.planId?.name || 'Unknown Plan'}</p>
                     <p className="text-lg font-bold text-primary">
-                      ${selectedSubscription.Product?.price || '0.00'}/{selectedSubscription.subscription_type === 'yearly' ? 'year' : 'month'}
+                      ${selectedSubscription.pricing?.finalPrice || selectedSubscription.planId?.price || '0.00'}/{selectedSubscription.planId?.billingCycle || 'month'}
                     </p>
                   </div>
 
@@ -447,20 +537,23 @@ const SubscriptionDashboard = () => {
                     <h4 className="font-medium text-text mb-3">Available Upgrades</h4>
                     <div className="space-y-3">
                       {products
-                        .filter(product => product.product_id !== selectedSubscription.product_id)
+                        .filter(product => product._id !== selectedSubscription.planId?._id)
                         .slice(0, 5)
                         .map((product) => (
-                          <div key={product.product_id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                          <div key={product._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                             <div className="flex justify-between items-start">
                               <div>
                                 <h5 className="font-medium text-text">{product.name}</h5>
                                 <p className="text-sm text-gray-600">
-                                  Auto Renewal: {product.auto_renewal_allowed}
+                                  Billing: {product.billingCycle} | Category: {product.category}
                                 </p>
                               </div>
                               <div className="text-right">
                                 <p className="text-lg font-bold text-primary">${product.price}</p>
-                                <button className="mt-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-blue-600 transition-colors text-sm">
+                                <button 
+                                  onClick={() => handleUpgradeToPlan(selectedSubscription._id, product._id)}
+                                  className="mt-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                                >
                                   Upgrade to This Plan
                                 </button>
                               </div>
