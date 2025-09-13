@@ -3,6 +3,8 @@ import cors from "cors"
 import path from "path"
 import { fileURLToPath } from 'url'
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
+import authRoutes from "./routes/authrotes.js";
+import planRoutes from "./routes/planRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -17,6 +19,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // API Routes
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/plans", planRoutes);
 
 
 // Serve the UI

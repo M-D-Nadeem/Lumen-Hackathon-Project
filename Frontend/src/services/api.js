@@ -30,9 +30,33 @@ class ApiService {
     }
   }
 
-  // User endpoints
+  // Auth endpoints
+  async login(email, password) {
+    return this.request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
+  async register(userData) {
+    return this.request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  // User endpoints (get user from token)
   async getUser(userId) {
-    return this.request(`/users/${userId}`);
+    // For now, return demo data since we don't have a user endpoint
+    return {
+      success: true,
+      data: {
+        id: userId,
+        userName: 'John Doe',
+        email: 'john.doe@example.com',
+        status: 'active'
+      }
+    };
   }
 
   // Subscription endpoints

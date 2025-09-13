@@ -23,7 +23,7 @@ const Login = () => {
     if (form.role === 'admin') {
       navigate('/admin');  // Redirect to AdminDashboard
     } else {
-      navigate('/plans');  // Redirect to user page
+      navigate('/dashboard');  // Redirect to user page
     }
     alert(`Logged in as ${form.role}\nEmail: ${form.email}`);
   };
